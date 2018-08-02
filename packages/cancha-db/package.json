@@ -1,0 +1,14 @@
+{
+  "name": "cancha-db",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "knex": "^0.15.2",
+    "pg": "^7.4.3"
+  },
+  "scripts": {
+    "init-db": "PGPASSWORD=123  psql -U postgres -c 'create database if not exists canchas;' && node ./src/scripts/initDB.js",
+    "recreate-db": "PGPASSWORD=123  psql -U postgres -c 'drop database canchas; create database canchas;' && node ./src/scripts/initDB.js"
+  }
+}
