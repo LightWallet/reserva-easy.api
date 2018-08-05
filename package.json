@@ -11,6 +11,6 @@
   ],
   "scripts": {
    "install": "bash post-install.sh",
-   "recreate-db": "PGPASSWORD=123  psql -U postgres -c 'drop database canchas;' && PGPASSWORD=123  psql -U postgres -c 'create database canchas;' && node ./packages/cancha-db/src/scripts/initDB.js"
+   "recreate-db": "node ./packages/cancha-db/src/scripts/initDB.js"
   }
 }

@@ -1,6 +1,8 @@
+const path = require("path");
+const envDir = path.join(__dirname, '../../..')
+var dotenv = require('dotenv').config({path: envDir + '/.env'})
 const { convertDateToUTCTimestamp } = require('./date-utils.js');
 
-const { PG_HOST, PG_USER, PG_PASS, PG_DB } = process.env;
 const config = {
   client: 'pg'
 };
@@ -17,10 +19,10 @@ const customDateTimeTypecaster = (field, next) => {
 if (process.env.NODE_ENV !== 'test') {
   // eslint-disable-next-line fp/no-mutation
   config.connection = {
-    host: PG_HOST || '127.0.0.1',
-    user: PG_USER || 'postgres',
-    password: PG_PASS || '123',
-    database: PG_DB || 'canchas',
+    host: process.env.PG_HOST || '127.0.0.1',
+    user: process.env.PG_USER || 'postgres',
+    password: process.env.PG_PASS || '123',
+    database: process.env.PG_DB || 'canchas',
     timezone: 'UTC',
     typeCast: customDateTimeTypecaster
   };
