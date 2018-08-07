@@ -6,16 +6,18 @@ const APIError = require('../helpers/APIError');
 const config = require('../../config/config');
 const queries = require('../sql/auth.queries.js')
 
+
 const handleLoginError = err => {
   return err ? responses.unknownError(err) : responses.loginFailed();
 }
 
 const respondWithToken = value => {
   const token = jwt.sign({
-    username: value.get('email')
+    email: value.email,
+    roleId: value.roleId
   }, config.jwtSecret);
 
-  return { status: 200, resp: token };
+  return { token };
 };
 
 /**
@@ -28,11 +30,20 @@ const respondWithToken = value => {
 
 
 async function login(req, res, next) {
-  const user = { email: req.body.email, password: req.body.password }
-  return validatePassword(user).then(respondWithToken, handleLoginError).then((response) => {
-    res.status(response.status)
-    res.json(response)
-  })
+  try {
+    const user = { email: req.body.email, password: req.body.password }
+    const userFull = await validatePassword(user)
+    const token  = respondWithToken(userFull)
+
+    res.json({
+      user: userFull,
+      token: token.token
+    });
+  } catch(e) {
+    res.status(400)
+    res.json({ "error": e.message })
+  }
+
 }
 
 
@@ -58,39 +69,45 @@ function getRandomNumber(req, res) {
  * @returns {*}
  */
 async function getUserInformation(req, res) {
-  const value = {email: req.user}
-  const [foundRow] = await queries.getUserDataByEmail(value);
+  try {
+    const value = { ...req.user }
+    if(value.username) {
+      value.email = value.username
+    }
+    const foundRow = await queries.getUserDataByEmail(value);
 
-  if(foundRow) {
-    const user = {...foundRow, ...value}
-    delete user.get('password')
-    res.status(200)
-    return res.json({
-      user: value
-    });
-  } else {
-    res.status(500)
-    return res.json({
-      error: "User not found "
-    })
+    if(!(foundRow instanceof Error)) {
+      const user = {...foundRow, ...value}
+      delete user.password
+      res.status(200)
+      return res.json({
+        user
+      });
+    } else {
+    res.status(400)
+    res.json({ "error": foundRow.message })
+    }
+  } catch(e) {
+    res.status(400)
+    res.json({ "error": e.message })
   }
 }
 
 const validatePassword = async value => {
-  const [foundRow] = await queries.getUserDataByEmail(value);
-  if (foundRow) {
-    const { password: hashedPassword } = foundRow;
+  const user = await queries.getUserDataByEmail(value);
+  if (!(user instanceof Error)) {
+    const hashedPassword = user.password
     const passwordIsCorrect = await bcrypt.compare(
-      value.get('password'),
+      value.password,
       hashedPassword
     );
 
     // return value with name to create session object
-    const valueFull = {...value, ...foundRow}
-    return passwordIsCorrect ? valueFull : Promise.reject();
+    const valueFull = {...value, ...user}
+    return passwordIsCorrect ? valueFull : null;
+  } else {
+    return null;
   }
-
-  return Promise.reject();
 };
 
 module.exports = { login, getRandomNumber, getUserInformation };

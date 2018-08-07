@@ -1,14 +1,21 @@
+const db = require('cancha-db');
+const model = require('./user.model')
+const bcrypt = require('bcrypt');
+const config = require('../../config/config');
 
 /**
  * Load user and append to req.
  */
-function load(req, res, next, id) {
-  // User.get(id)
-  //   .then((user) => {
-  //     req.user = user; // eslint-disable-line no-param-reassign
-  //     return next();
-  //   })
-  //   .catch(e => next(e));
+async function load(req, res, next, id) {
+  try {
+    const user = await db.select().from('user').first().where({ id })
+    await model.assignRoleToUser(db, user)
+    req.user = user
+    next()
+  } catch(e) {
+    res.status(400)
+    res.json({ "error": e.message })
+  }
 }
 
 /**
@@ -25,32 +32,60 @@ function get(req, res) {
  * @property {string} req.body.mobileNumber - The mobileNumber of user.
  * @returns {User}
  */
-function create(req, res, next) {
-  // const user = new User({
-  //   username: req.body.username,
-  //   mobileNumber: req.body.mobileNumber
-  // });
+async function create(req, res, next) {
+  const email = req.body.email
+  const name = req.body.name
+  const phone = req.body.phone
+  const roleId = req.body.roleId
+  const stateId = req.body.stateId
+  const SALT = await bcrypt.genSalt(config.saltRounds)
+  const password = await bcrypt.hash(req.body.password, SALT)
 
-  // user.save()
-  //   .then(savedUser => res.json(savedUser))
-  //   .catch(e => next(e));
+  try {
+    if(roleId && stateId) {
+      const role = await db('role').select().where({ id: roleId }).first()
+      const state = await db('state').select().where({ id: stateId }).first()
+      console.info(req.body)
+      console.info(state)
+      if(role.type === "ADMIN" || state.name === "PREMIUM" || state.name === "ACTIVE"){
+        res.status(401);
+        res.json({"error": "Not allowed role or state..."})
+      }
+    }
+
+    const user = await db('user').insert({email, password, name, phone, roleId, stateId }).returning('*')
+    delete user[0]['password']
+    res.status(200);
+    res.json(user[0])
+  } catch(e) {
+    res.status(400)
+    res.json({error: e.message })
+  }
 }
 
 /**
  * Update existing user
- * @property {string} req.body.username - The username of user.
- * @property {string} req.body.mobileNumber - The mobileNumber of user.
+ * @property {string} req.body.name - The username of user.
+ * @property {string} req.body.phone - The phone of user.
  * @returns {User}
  */
-function update(req, res, next) {
-  // const user = req.user;
-  // user.username = req.body.username;
-  // user.mobileNumber = req.body.mobileNumber;
-
-  // user.save()
-  //   .then(savedUser => res.json(savedUser))
-  //   .catch(e => next(e));
+async function update(req, res, next) {
+  const user = req.user;
+  try {
+  const userNew = await db('user')
+    .where({ id: user.id })
+    .update({
+      name: req.body.name,
+      phone: req.body.phone,
+    }).returning("*")
+  res.status(200)
+  res.json(...userNew)
+  } catch(e) {
+    res.status(400)
+    res.json(e.message)
+  }
 }
+
 
 /**
  * Get user list.
@@ -58,11 +93,21 @@ function update(req, res, next) {
  * @property {number} req.query.limit - Limit number of users to be returned.
  * @returns {User[]}
  */
-function list(req, res, next) {
-  // const { limit = 50, skip = 0 } = req.query;
-  // User.list({ limit, skip })
-  //   .then(users => res.json(users))
-  //   .catch(e => next(e));
+
+async function list(req, res, next) {
+  const { limit = 10, skip = 0 } = req.query;
+db.select(['id', 'email', 'name', 'phone', 'roleId', 'stateId'])
+.from('user')
+.limit(limit)
+    .offset(skip).then(async (usersResult) => {
+      res.status(200);
+      for(const user in usersResult) {
+        await model.assignRoleToUser(db, user)
+      }
+
+      res.json(usersResult)
+
+    }).catch((e) => next(e));
 }
 
 /**
@@ -70,10 +115,12 @@ function list(req, res, next) {
  * @returns {User}
  */
 function remove(req, res, next) {
-  // const user = req.user;
-  // user.remove()
-  //   .then(deletedUser => res.json(deletedUser))
-  //   .catch(e => next(e));
+   const user = req.user;
+  db('user')
+    .where({ id: user.id })
+    .del().then((deletedUser) => {
+      res.json(deletedUser);
+    }).catch((e) => next(e));
 }
 
 module.exports = { load, get, create, update, list, remove };

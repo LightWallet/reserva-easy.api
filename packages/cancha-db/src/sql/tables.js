@@ -20,12 +20,13 @@ const createUserColumns = table => {
     table.string('name', MAX_NAME_LENGTH).notNullable();
     table.string('password').notNullable();
     table.string('phone', MAX_PHONE_LENGTH).notNullable();
-    table.string('salt').notNullable();
     table.integer('roleId').unsigned().notNullable()
     table.integer('stateId').unsigned().notNullable()
 
     table.foreign('stateId').references('id').inTable('state');
     table.foreign('roleId').references('id').inTable('role');
+
+    table.unique(['email'])
 };
 
 const createStripeCardColumns = table => {

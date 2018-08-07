@@ -18,7 +18,8 @@ const envVarsSchema = Joi.object({
   PG_PORT: Joi.number()
     .default(27017),
   PG_PASS: Joi.string().required(),
-  PG_USER: Joi.string().required()
+  PG_USER: Joi.string().required(),
+  SALT_ROUNDS: Joi.number().required()
 }).unknown()
   .required();
 
@@ -28,6 +29,7 @@ if (error) {
 }
 
 const config = {
+  saltRounds: envVars.SALT_ROUDNS,
   env: envVars.NODE_ENV,
   port: envVars.PORT,
   jwtSecret: envVars.JWT_SECRET,

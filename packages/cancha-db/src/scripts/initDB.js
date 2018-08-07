@@ -24,7 +24,7 @@ const tryToCreateTables = async () => {
 const recreateDatabase = async () => {
     try {
         await knexDB.raw(`drop DATABASE ${process.env.PG_DB}`)
-    } catch(e){}
+    } catch(e){ console.error(e) }
     await knexDB.raw(`create DATABASE ${process.env.PG_DB}`)
 }
 

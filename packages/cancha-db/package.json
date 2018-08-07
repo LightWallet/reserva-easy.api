@@ -10,6 +10,7 @@
   },
   "scripts": {
     "init-db": "node ./src/scripts/initDB.js",
-    "recreate-db": "node ./src/scripts/initDB.js"
+    "recreate-db": "node ./src/scripts/initDB.js",
+    "seed": "node ./src/seeder/states_roles.js"
   }
 }
