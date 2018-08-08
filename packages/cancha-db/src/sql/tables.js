@@ -7,11 +7,13 @@ const MAX_PHONE_LENGTH = 100
 const createStateColumns = table => {
     table.increments('id').primary().unsigned();
     table.string('name', 20).notNullable();
+    table.unique(['name'])
 };
 
 const createRoleColumns = table => {
     table.increments('id').primary().unsigned();
     table.string('type', 20).notNullable();
+    table.unique(['type'])
 };
 
 const createUserColumns = table => {

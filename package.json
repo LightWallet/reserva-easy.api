@@ -10,7 +10,8 @@
     "packages/*"
   ],
   "scripts": {
-   "install": "bash post-install.sh",
-   "recreate-db": "node ./packages/cancha-db/src/scripts/initDB.js"
+    "recreate-db": "node ./packages/cancha-db/src/scripts/initDB.js",
+    "seed": "node ./packages/cancha-db/src/seeder/states_roles.js",
+    "docker:start": "node ./packages/cancha-api/index.js"
   }
 }
