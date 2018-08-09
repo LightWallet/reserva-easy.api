@@ -12,6 +12,6 @@
   "scripts": {
     "recreate-db": "node ./packages/cancha-db/src/scripts/initDB.js",
     "seed": "node ./packages/cancha-db/src/seeder/states_roles.js",
-    "docker:start": "node ./packages/cancha-api/index.js"
+    "docker:start": "nodemon ./packages/cancha-api/index.js"
   }
 }

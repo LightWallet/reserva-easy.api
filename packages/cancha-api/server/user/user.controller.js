@@ -45,8 +45,6 @@ async function create(req, res, next) {
     if(roleId && stateId) {
       const role = await db('role').select().where({ id: roleId }).first()
       const state = await db('state').select().where({ id: stateId }).first()
-      console.info(req.body)
-      console.info(state)
       if(role.type === "ADMIN" || state.name === "PREMIUM" || state.name === "ACTIVE"){
         res.status(401);
         res.json({"error": "Not allowed role or state..."})

@@ -33,8 +33,12 @@ async function login(req, res, next) {
   try {
     const user = { email: req.body.email, password: req.body.password }
     const userFull = await validatePassword(user)
+    if(typeof(userFull) === 'string' || userFull === null) {
+      res.status(400)
+      res.json({error: "User not found"})
+      return;
+    }
     const token  = respondWithToken(userFull)
-
     res.json({
       user: userFull,
       token: token.token
@@ -95,7 +99,7 @@ async function getUserInformation(req, res) {
 
 const validatePassword = async value => {
   const user = await queries.getUserDataByEmail(value);
-  if (!(user instanceof Error)) {
+  if (!(user instanceof Error) && !(user instanceof String) && !(typeof(user) === 'string')) {
     const hashedPassword = user.password
     const passwordIsCorrect = await bcrypt.compare(
       value.password,
