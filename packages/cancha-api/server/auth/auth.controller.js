@@ -6,7 +6,6 @@ const APIError = require('../helpers/APIError');
 const config = require('../../config/config');
 const queries = require('../sql/auth.queries.js')
 
-
 const handleLoginError = err => {
   return err ? responses.unknownError(err) : responses.loginFailed();
 }

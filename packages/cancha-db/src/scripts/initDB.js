@@ -13,7 +13,13 @@ var knexDB = require('knex')({ client: 'pg',
 
 const { createTables } = require('../sql/tables.js');
 
-const hasTables = () => knex.schema.hasTable('canchas');
+const hasTables = () => {
+  if(process.env.NODE_ENV == "test") {
+    knex.schema.hasTable('canchas_test');
+  } else {
+    knex.schema.hasTable('canchas');
+  }
+}
 
 const tryToCreateTables = async () => {
   const dbExists = await hasTables();

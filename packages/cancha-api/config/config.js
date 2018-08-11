@@ -24,6 +24,7 @@ const envVarsSchema = Joi.object({
   .required();
 
 const { error, value: envVars } = Joi.validate(process.env, envVarsSchema);
+
 if (error) {
   throw new Error(`Config validation error: ${error.message}`);
 }
@@ -38,7 +39,7 @@ const config = {
     port: envVars.PG_PORT,
     pass: envVars.PG_PASS,
     user: envVars.PG_USER,
-    db: envVars.PG_DB,
+    db: envVars.PG_DB
   }
 };
 

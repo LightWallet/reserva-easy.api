@@ -26,6 +26,15 @@ if (process.env.NODE_ENV !== 'test') {
     timezone: 'UTC',
     typeCast: customDateTimeTypecaster
   };
+} else {
+  config.connection = {
+    host: '127.0.0.1',
+    user: process.env.PG_USER || 'postgres',
+    password: process.env.PG_PASS || '123',
+    database: 'canchas_test',
+    timezone: 'UTC',
+    typeCast: customDateTimeTypecaster
+  };
 }
 
 module.exports = require('knex')(config);

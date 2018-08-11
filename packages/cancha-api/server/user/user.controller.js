@@ -94,9 +94,9 @@ async function update(req, res, next) {
 
 async function list(req, res, next) {
   const { limit = 10, skip = 0 } = req.query;
-db.select(['id', 'email', 'name', 'phone', 'roleId', 'stateId'])
-.from('user')
-.limit(limit)
+  db.select(['id', 'email', 'name', 'phone', 'roleId', 'stateId'])
+    .from('user')
+    .limit(limit)
     .offset(skip).then(async (usersResult) => {
       res.status(200);
       for(const user in usersResult) {
@@ -105,7 +105,7 @@ db.select(['id', 'email', 'name', 'phone', 'roleId', 'stateId'])
 
       res.json(usersResult)
 
-    }).catch((e) => next(e));
+    }).catch((e) => res.json({error: e.message}));
 }
 
 /**

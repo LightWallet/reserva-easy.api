@@ -1,0 +1,17 @@
+{
+  "env": {
+    "node": 1,
+    "browser": 0
+  },
+  "globals": {
+    "exampleGlobalVariable": true
+  },
+  "rules": {
+    "eqeqeq": 1
+  },
+  "plugins": [
+  ],
+  "parserOptions": {
+    "ecmaVersion": 2017
+ }
+}
