@@ -10,7 +10,7 @@ async function load(req, res, next, id) {
   try {
     const user = await db.select().from('users').first().where({ id })
     await model.assignRoleToUser(db, user)
-    req.user = user
+    res.locals.user = user
     next()
   } catch(e) {
     res.status(400)
@@ -44,7 +44,15 @@ async function create(req, res, next) {
   try {
     if(roleId && stateId) {
       const role = await db('role').select().where({ id: roleId }).first()
+      if(role === null) {
+        res.status(401);
+        res.json({"error": "Role does not exist..."})
+      }
       const state = await db('state').select().where({ id: stateId }).first()
+      if(state === null) {
+        res.status(401);
+        res.json({"error": "State does not exist..."})
+      }
       if(role.type === "ADMIN" || state.name === "PREMIUM" || state.name === "ACTIVE"){
         res.status(401);
         res.json({"error": "Not allowed role or state..."})
@@ -69,7 +77,7 @@ async function create(req, res, next) {
  * @returns {User}
  */
 async function update(req, res, next) {
-  const user = req.user;
+  const user = res.locals.user;
   try {
   const userNew = await db('users')
     .where({ id: user.id })
@@ -95,9 +103,11 @@ async function update(req, res, next) {
 
 async function list(req, res, next) {
   const { limit = 10, skip = 0 } = req.query;
+  const deletedState = await db('state').select().where( {name: 'DELETED'} ).first()
   db.select(['id', 'email', 'name', 'phone', 'roleId', 'stateId'])
     .from('users')
     .limit(limit)
+    .whereNotIn({stateId: [deletedState.id]})
     .offset(skip).then(async (usersResult) => {
       res.status(200);
       for(const user in usersResult) {
@@ -113,13 +123,25 @@ async function list(req, res, next) {
  * Delete user.
  * @returns {User}
  */
-function remove(req, res, next) {
-   const user = req.user;
-  db('users')
-    .where({ id: user.id })
-    .del().then((deletedUser) => {
+async function remove(req, res, next) {
+  const user = res.locals.user;
+  if(user.role.type !== 'ADMIN') {
+    res.status(403)
+    res.json({ error: "forbidden" })
+    return
+  }
+
+  const deletedState = await db('state').select().where( {name: 'DELETED'} ).first()
+  db('user')
+    .update( {stateId: deletedState.id} )
+    .where({id: user.id})
+    .returning('*')
+    .then((deletedUser) => {
       res.json(deletedUser);
-    }).catch((e) => next(e));
+    }).catch((e) => {
+      res.status(403)
+      res.json({ error: "forbidden" })
+    })
 }
 
 module.exports = { load, get, create, update, list, remove };

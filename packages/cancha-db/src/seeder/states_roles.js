@@ -8,7 +8,8 @@ const rolesData = [
 const statesData = [
   { name: 'INACTIVE' },
   { name: 'ACTIVE' },
-  { name: 'PREMIUM' }
+  { name: 'PREMIUM' },
+  { name: 'DELETED' }
 ];
 
 const seed = async function() {
