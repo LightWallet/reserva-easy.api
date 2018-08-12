@@ -13,6 +13,7 @@
     "recreate-db": "node ./packages/cancha-db/src/scripts/initDB.js",
     "seed": "node ./packages/cancha-db/src/seeder/states_roles.js",
     "docker:start": "nodemon ./packages/cancha-api/index.js",
-    "test": "mocha --timeout 10000"
+    "test": "mocha --timeout 10000",
+    "recreate-test-db": "NODE_ENV=test node ./packages/cancha-db/src/scripts/initDB.js"
   }
 }

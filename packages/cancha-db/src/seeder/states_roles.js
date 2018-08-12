@@ -13,13 +13,16 @@ const statesData = [
 
 const seed = async function() {
   try {
-  await db('role').del()
-  await db('state').del();
-  await db('role').insert(rolesData);
-  await db('state').insert(statesData);
+    await db('role').del()
+    await db('state').del();
+    await db('role').insert(rolesData);
+    await db('state').insert(statesData);
     db.destroy()
   } catch(e) {
+    console.info(e)
   }
 };
 
 seed(); // :v
+
+module.exports = { seed }
