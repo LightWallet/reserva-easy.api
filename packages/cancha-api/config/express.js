@@ -1,4 +1,5 @@
 const express = require('express');
+const fileUpload = require('express-fileupload');
 const logger = require('morgan');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
@@ -23,7 +24,6 @@ if (config.env === 'development') {
 // parse body params and attache them to req.body
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-
 app.use(cookieParser());
 app.use(compress());
 app.use(methodOverride());
@@ -34,6 +34,9 @@ app.use(helmet());
 // enable CORS - Cross Origin Resource Sharing
 app.use(cors());
 
+app.use(fileUpload({
+  limits: { fileSize: 50 * 1024 * 1024 },
+}));
 // enable detailed API logging in dev env
 if (config.env === 'development') {
   expressWinston.requestWhitelist.push('body');

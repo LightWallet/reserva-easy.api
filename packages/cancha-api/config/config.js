@@ -4,6 +4,12 @@ var dotenv = require('dotenv').config({path: envDir + '/.env'})
 const Joi = require('joi');
 
 const envVarsSchema = Joi.object({
+ AWSSecretKey: Joi.string()
+    .allow(['development', 'production', 'test'])
+    .default('development'),
+ AWSAccessKeyId: Joi.string()
+    .allow(['development', 'production', 'test'])
+    .default('development'),
   NODE_ENV: Joi.string()
     .allow(['development', 'production', 'test'])
     .default('development'),
@@ -30,6 +36,9 @@ if (error) {
 }
 
 const config = {
+  saltRounds: envVars.SALT_ROUDNS,
+  AWSSecretKey: envVars.AWSSecretKey,
+  AWSAccessKeyId: envVars.AWSAccessKeyId,
   saltRounds: envVars.SALT_ROUDNS,
   env: envVars.NODE_ENV,
   port: envVars.PORT,
