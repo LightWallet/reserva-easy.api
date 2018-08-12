@@ -5,7 +5,7 @@ const getUserDataByEmail = async (user) => {
     const userResult = await
     db.select(['name', 'email', 'password', 'roleId', 'phone', 'stateId']).from('user')
       .where({ email:user.email }).first()
-    if(userResult == null)  return "Empty User"
+    if(userResult === null)  return "Empty User"
     const role = await db.select().from('role').where({id: userResult.roleId}).first()
     userResult.role = role
     return userResult

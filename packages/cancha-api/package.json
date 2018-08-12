@@ -57,6 +57,7 @@
   },
   "scripts": {
     "start": "nodemon index.js",
-    "pretest": "eslint --ignore-path ../../.gitignore ."
+    "pretest": "eslint --ignore-path ../../.gitignore .",
+    "test": "mocha --timeout 1000"
   }
 }

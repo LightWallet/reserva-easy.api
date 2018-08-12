@@ -11,14 +11,28 @@ jobs:
           PG_PASS:
           PG_HOST: localhost
           PG_DB: canchas_test
+          JWT_SECRET: 'pYhI:7lOs@1#bS"["Y9x[NWF'
+          PG_USER: root
+          PORT: 9000
+          PG_PORT: 5432
+          SALT_ROUNDS: 10
+          AWSSecretkey: aaaaa
+          AWSAccessKeyId: aaaaa
 
-      - image: circleci/postgres:9.6.5-alpine-ram
+      - image: circleci/postgres:9.6
+        environment:
+          POSTGRES_USER: root
+          POSTGRES_DB: canchas_test
 
     steps:
       - checkout
       - run: sudo apt-get update
-      - run: sudo apt-get install postgresql-client-9.6
-      - run: whoami
-      - run: yarn recreate-test-db
       - run: yarn install
-      - run: yarn test
+      - run: yarn recreate-test-db
+      - run:
+          command: cd packages/cancha-api && yarn test
+workflows:
+  version: 2
+  runTest:
+    jobs:
+      - build

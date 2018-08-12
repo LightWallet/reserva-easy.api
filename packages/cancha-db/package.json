@@ -4,6 +4,7 @@
   "main": "src/index.js",
   "license": "MIT",
   "dependencies": {
+    "dotenv": "false6.0.0",
     "knex": "^0.15.2",
     "pg": "^7.4.3",
     "pgtools": "^0.3.0"
