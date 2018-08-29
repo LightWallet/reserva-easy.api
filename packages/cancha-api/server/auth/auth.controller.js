@@ -34,7 +34,7 @@ async function login(req, res, next) {
     const userFull = await validatePassword(user)
     if(typeof(userFull) === 'string' || userFull === null) {
       res.status(400)
-      res.json({error: "User not found"})
+      res.json({error: "Error authenticating"})
       return;
     }
     const token  = respondWithToken(userFull)

@@ -1,20 +1,28 @@
-const db = require('cancha-db');
-const model = require('./user.model')
+const userQueries = require('./user.queries')
+const roleQueries = require('../roles/role.queries')
+const stateQueries = require('../states/state.queries')
+
 const bcrypt = require('bcrypt');
 const config = require('../../config/config');
+
+// errors
+const UserNotFoundError = require('../errors/UserNotFoundError');
+const RoleNotFoundError = require('../errors/RoleNotFoundError');
+const StateNotFoundError = require('../errors/StateNotFoundError');
+const NotAllowedError = require('../errors/NotAllowedError');
+const UserNotCreatedError = require('../errors/UserNotCreatedError');
 
 /**
  * Load user and append to req.
  */
 async function load(req, res, next, id) {
-  try {
-    const user = await db.select().from('users').first().where({ id })
-    await model.assignRoleToUser(db, user)
+    const user = await userQueries.getUserById(id)
+  if(user === null) {
+    next(new UserNotFoundError())
+  } else {
+    await userQueries.assignRoleToUser(user)
     res.locals.user = user
     next()
-  } catch(e) {
-    res.status(400)
-    res.json({ "error": e.message })
   }
 }
 
@@ -41,33 +49,28 @@ async function create(req, res, next) {
   const SALT = await bcrypt.genSalt(config.saltRounds)
   const password = await bcrypt.hash(req.body.password, SALT)
 
-  try {
-    if(roleId && stateId) {
-      const role = await db('role').select().where({ id: roleId }).first()
-      if(role === null) {
-        res.status(401);
-        res.json({"error": "Role does not exist..."})
-      }
-      const state = await db('state').select().where({ id: stateId }).first()
-      if(state === null) {
-        res.status(401);
-        res.json({"error": "State does not exist..."})
-      }
-      if(role.type === "ADMIN" || state.name === "PREMIUM" || state.name === "ACTIVE"){
-        res.status(401);
-        res.json({"error": "Not allowed role or state..."})
-        return
-      }
+  if(roleId && stateId) {
+    const role = await roleQueries.getRoleById(roleId)
+    if(role === null){
+      return next(new RoleNotFoundError())
     }
-
-    const user = await db('users').insert({email, password, name, phone, roleId, stateId }).returning('*')
-    delete user[0]['password']
-    res.status(200);
-    res.json(user[0])
-  } catch(e) {
-    res.status(400)
-    res.json({error: e.message })
+    const state = await stateQueries.getStateById(stateId)
+    if(state === null) {
+      return next(new StateNotFoundError())
+    }
+    if(role.type === "ADMIN" || state.name === "PREMIUM" || state.name === "ACTIVE") {
+      return next(new NotAllowedError())
+    }
   }
+
+  const user = await userQueries.create({email, password, name, phone, roleId, stateId })
+  if(!user) {
+    return next(new UserNotCreatedError())
+  }
+
+  delete user['password']
+  res.status(200);
+  res.json(user)
 }
 
 /**

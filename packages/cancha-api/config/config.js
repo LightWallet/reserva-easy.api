@@ -16,11 +16,11 @@ const envVarsSchema = Joi.object({
   PORT: Joi.number()
     .default(9000),
   JWT_SECRET: Joi.string().required()
-    .description('JWT SECRET REQUIRED'),
+    .description('jwt secret required'),
   PG_HOST: Joi.string().required()
-    .description('DB HOST URL'),
+    .description('db host url'),
   PG_DB: Joi.string().required()
-    .description('PG_DB NAME REQUIRED'),
+    .description('pg_db name required'),
   PG_PORT: Joi.number()
     .default(27017),
   PG_PASS: Joi.string().required(),
