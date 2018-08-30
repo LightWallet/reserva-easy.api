@@ -11,6 +11,8 @@ const RoleNotFoundError = require('../errors/RoleNotFoundError');
 const StateNotFoundError = require('../errors/StateNotFoundError');
 const NotAllowedError = require('../errors/NotAllowedError');
 const UserNotCreatedError = require('../errors/UserNotCreatedError');
+const UserCouldNotBeUpdatedError = require('../errors/UserCouldNotBeUpdatedError');
+const UsersListError = require('../errors/UsersListError');
 
 /**
  * Load user and append to req.
@@ -81,19 +83,13 @@ async function create(req, res, next) {
  */
 async function update(req, res, next) {
   const user = res.locals.user;
-  try {
-  const userNew = await db('users')
-    .where({ id: user.id })
-    .update({
+  const userNew = await userQueries.update(user.id, {
       name: req.body.name,
       phone: req.body.phone,
-    }).returning("*")
+    })
+  if(!userNew) return next(new UserCouldNotBeUpdatedError())
   res.status(200)
   res.json(...userNew)
-  } catch(e) {
-    res.status(400)
-    res.json(e.message)
-  }
 }
 
 
@@ -106,20 +102,12 @@ async function update(req, res, next) {
 
 async function list(req, res, next) {
   const { limit = 10, skip = 0 } = req.query;
-  const deletedState = await db('state').select().where( {name: 'DELETED'} ).first()
-  db.select(['id', 'email', 'name', 'phone', 'roleId', 'stateId'])
-    .from('users')
-    .limit(limit)
-    .whereNotIn({stateId: [deletedState.id]})
-    .offset(skip).then(async (usersResult) => {
-      res.status(200);
-      for(const user in usersResult) {
-        await model.assignRoleToUser(db, user)
-      }
+  const deletedState = await stateQueries.getStateByName('DELETED')
+  const users = userQueries.list(limit, skip, deletedState.id)
 
-      res.json(usersResult)
+  if(!users) return next(new UsersListError())
 
-    }).catch((e) => res.json({error: e.message}));
+  res.json(users)
 }
 
 /**
@@ -134,17 +122,16 @@ async function remove(req, res, next) {
     return
   }
 
-  const deletedState = await db('state').select().where( {name: 'DELETED'} ).first()
-  db('user')
-    .update( {stateId: deletedState.id} )
-    .where({id: user.id})
-    .returning('*')
-    .then((deletedUser) => {
-      res.json(deletedUser);
-    }).catch((e) => {
-      res.status(403)
-      res.json({ error: "forbidden" })
-    })
+  try {
+    const deletedState = await stateQueries.getStateByName('DELETED') // DO NOT USE THIS YET...
+    const userDeleted = await userQueries.delete(user.id)
+    console.info(userDeleted)
+    res.json(...userDeleted)
+  }catch(e) {
+    res.status(403)
+    res.json({ error: "forbidden" })
+    return
+  }
 }
 
 module.exports = { load, get, create, update, list, remove };

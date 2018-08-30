@@ -7,4 +7,11 @@ async function getStateById(id) {
   return state
 }
 
-module.exports = { getStateById }
+async function getStateByName(name) {
+  const state = await db('state').select().where( {name } ).first()
+
+  if(!state) return null
+  return state
+}
+
+module.exports = { getStateById, getStateByName }
