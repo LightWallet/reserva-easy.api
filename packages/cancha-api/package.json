@@ -29,6 +29,8 @@
     "method-override": "^2.3.8",
     "moment-timezone": "^0.5.13",
     "morgan": "^1.8.1",
+    "multer": "false1.4.1",
+    "multer-s3": "false2.7.0",
     "passport": "^0.4.0",
     "passport-http-bearer": "^1.0.1",
     "passport-jwt": "4.0.0",

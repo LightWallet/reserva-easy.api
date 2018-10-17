@@ -2,7 +2,7 @@ const AWS = require('aws-sdk');
 
 const BUCKET_NAME = 'canchaphotos';
 const IAM_USER_KEY = process.env.AWSAccessKeyId;
-const IAM_USER_SECRET = process.env.AWSSecretKey;
+const IAM_USER_SECRET = process.env.AWSSecretkey;
 
 function uploadToS3(file) {
  let s3bucket = new AWS.S3({
