@@ -49,9 +49,16 @@ async function create(req, res, next) {
   const active = (['ACTIVE', 'PREMIUM'].indexOf(userState.name)> -1) ? true : false
   if (!req.files) console.error('No files were uploaded')
   else  {
+    await req.files.forEach((key) => {
+    if(["image/jpeg", "image/png"].indexOf(req.files[key].mimetype) < 0) {
+      res.status(403)
+      res.json({error: "Forbidden" })
+    }
+  })
     await Object.keys(req.files).forEach(async (name) => {
       const hash = `${owner.id}-${name}-${new Date().getTime()}`
       req.files[name].name = hash
+
       try {
         await aws.uploadToS3(req.files[name])
       } catch(e) {
@@ -100,5 +107,26 @@ async function list(req, res, next) {
   }
 }
 
+async function create2(req, res, next) {
+  const fileKeys = Object.keys(req.files)
+  await fileKeys.forEach((key) => {
+    if(["image/jpeg", "image/png"].indexOf(req.files[key].mimetype) < 0) {
+      res.status(403)
+      res.json({error: "Forbidden" })
+    }
+  })
+
+  fileKeys.forEach(async (key) => {
+    var file = req.files[key];
+    try {
+      await aws.uploadToS3(file)
+    } catch(e) {
+      console.error(e)
+    }
+  })
+
+  res.json({error: "Uploaded Images"})
+
+}
 
 module.exports = { load, get, create, list };
