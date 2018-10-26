@@ -13,12 +13,12 @@ const loadSoccerPlaceFromId = async (id) => {
 }
 
 const getOwnerOrFail = async (email) => {
-  const user = null
+  let user = null
   try {
-    user = await db.select().from('user').first().where({ email })
+    user = await db.select().from('users').first().where({ email })
     delete user.password
   } catch(e) {
-    console.error(e);
+    console.error(e)
   }
   return user
 }
@@ -51,6 +51,5 @@ const getPlacesFromOwner = async (owner, limit, skip) => {
       return placesResult
     }).catch((e) => null);
 }
-
 
 module.exports = { loadSoccerPlaceFromId, getOwnerOrFail, createSoccerPlaceFromData, getPlacesFromOwner }

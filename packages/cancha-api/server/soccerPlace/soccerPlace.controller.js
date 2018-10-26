@@ -8,7 +8,18 @@ const aws = require('../helpers/s3');
  */
 async function load(req, res, next, id) {
   try {
+    const owner = queries.getOwnerOrFail(req.user.email)
+
+    if(!owner) {
+      throw new Error({error: "Permission denied"})
+    }
+
+    const ownerId = owner.id
     const soccerPlace = queries.loadSoccerPlaceFromId(id)
+    if(!soccerPlace.ownerId !== ownerId) {
+      throw new Error({error: "Permission denied"})
+    }
+
     if(!soccerPlace) throw new Error({error: "soccerplace not found"})
     req.soccerPlace = soccerPlace
     next()
@@ -67,7 +78,12 @@ async function create(req, res, next) {
       }
 
       // create the soccer place
-      const soccerPlace = await queries.createSoccerPlaceFromData(name, description, location, active, req.files)
+      const soccerPlace = await queries.createSoccerPlaceFromData(
+        name,
+        description,
+        location,
+        active,
+        req.files)
       if(!soccerPlace) {
         res.status(500)
         res.json({error: "Could not create soccerPlace"})
@@ -96,37 +112,19 @@ async function list(req, res, next) {
     }
 
     const places = await queries.getPlacesFromOwner(owner, limit, skip)
+
     if(!places) {
-      throw new Error({error: "fetch places error"})
+      res.status(404)
+      res.json({error: "Not found"})
+    } else  {
+      res.json(places)
     }
 
-    res.json(places)
   } catch(e) {
         res.status(400)
         res.json({error: "Could not send soccer places"})
   }
 }
 
-async function create2(req, res, next) {
-  const fileKeys = Object.keys(req.files)
-  await fileKeys.forEach((key) => {
-    if(["image/jpeg", "image/png"].indexOf(req.files[key].mimetype) < 0) {
-      res.status(403)
-      res.json({error: "Forbidden" })
-    }
-  })
-
-  fileKeys.forEach(async (key) => {
-    var file = req.files[key];
-    try {
-      await aws.uploadToS3(file)
-    } catch(e) {
-      console.error(e)
-    }
-  })
-
-  res.json({error: "Uploaded Images"})
-
-}
 
 module.exports = { load, get, create, list };

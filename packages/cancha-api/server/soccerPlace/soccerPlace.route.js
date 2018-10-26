@@ -14,11 +14,8 @@ router.route('/')
   /** POST /api/soccerPlaces - Create new soccer place */
   .post([expressJwt({ secret: config.jwtSecret })], soccerPlaceController.create)
 
-  /** delete this */
-  .put(soccerPlaceController.create);
-
 router.route('/:soccerPlaceId')
-  /** GET /api/soccerPlaces/:userId - Get soccer place */
+  /** GET /api/soccerPlaces/:soccerPlaceId - Get soccer place */
   .get(expressJwt({ secret: config.jwtSecret }), soccerPlaceController.get)
 
 

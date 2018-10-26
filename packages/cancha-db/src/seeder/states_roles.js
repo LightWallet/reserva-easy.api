@@ -13,6 +13,7 @@ const statesData = [
 
 const seed = async function() {
   try {
+    await db('users').del()
     await db('role').del()
     await db('state').del();
     await db('role').insert(rolesData);

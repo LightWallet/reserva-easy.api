@@ -37,7 +37,7 @@ const createStripeCardColumns = table => {
 
     table.foreign('userId')
         .references('id')
-        .inTable('user')
+        .inTable('users')
         .onDelete('CASCADE')
 
     table.primary(['token','userId']);
@@ -52,7 +52,7 @@ const createSoccerPlaceColumns = table => {
 
     table.foreign('ownerId')
         .references('id')
-        .inTable('user')
+        .inTable('users')
         .onDelete('CASCADE')
 
     table.integer('stateId').unsigned().notNullable()
@@ -119,7 +119,7 @@ const createReservationColumns = table => {
 
     table.foreign('client_id')
         .references('id')
-        .inTable('user')
+        .inTable('users')
         .onDelete('SET NULL')
 
     table.foreign('soccer_field_id')
@@ -132,7 +132,7 @@ const createTables = () => {
   return db.schema
     .createTable('state', createStateColumns)
     .createTable('role', createRoleColumns)
-    .createTable('user', createUserColumns)
+    .createTable('users', createUserColumns)
     .createTable('stripe_card', createStripeCardColumns)
     .createTable('soccer_place', createSoccerPlaceColumns)
     .createTable('soccer_field', createSoccerFieldColumns)
