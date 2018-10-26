@@ -38,8 +38,6 @@ async function create(req, res, next) {
   const user = req.user
   const owner = queries.getOwnerOrFail(req.user.email)
 
-  console.info("Usuario", user)
-
   if(!owner) {
     throw new Error({error: "User not found"})
   }
@@ -51,11 +49,18 @@ async function create(req, res, next) {
   const active = (['ACTIVE', 'PREMIUM'].indexOf(userState.name)> -1) ? true : false
   if (!req.files) console.error('No files were uploaded')
   else  {
+    await req.files.forEach((key) => {
+    if(["image/jpeg", "image/png"].indexOf(req.files[key].mimetype) < 0) {
+      res.status(403)
+      res.json({error: "Forbidden" })
+    }
+  })
     await Object.keys(req.files).forEach(async (name) => {
       const hash = `${owner.id}-${name}-${new Date().getTime()}`
       req.files[name].name = hash
+
       try {
-        //await aws.uploadToS3(req.files[name])
+        await aws.uploadToS3(req.files[name])
       } catch(e) {
         res.status(500)
         res.json({error: "Error creating image" })
@@ -122,32 +127,6 @@ async function create2(req, res, next) {
 
   res.json({error: "Uploaded Images"})
 
-  // const name = req.body.name
-  // const description = req.body.description
-  // const location = req.body.location
-  // const userState = queries.getUserState(owner.stateId);
-  // const active = (['ACTIVE', 'PREMIUM'].indexOf(userState.name)> -1) ? true : false
-  // if (!req.files) console.error('No files were uploaded')
-  // else  {
-  //   await Object.keys(req.files).forEach(async (name) => {
-  //     const hash = `${owner.id}-${name}-${new Date().getTime()}`
-  //     req.files[name].name = hash
-  //     try {
-  //       await aws.uploadToS3(req.files[name])
-  //     } catch(e) {
-  //       res.status(500)
-  //       res.json({error: "Error creating image" })
-  //     }
-
-  //     // create the soccer place
-  //     const soccerPlace = await queries.createSoccerPlaceFromData(name, description, location, active, req.files)
-  //     if(!soccerPlace) {
-  //       res.status(500)
-  //       res.json({error: "Could not create soccerPlace"})
-  //       return
-  //     }
-  //     res.json(soccerPlace)
-  //   })
 }
 
-module.exports = { load, get, create, create2, list };
+module.exports = { load, get, create, list };
