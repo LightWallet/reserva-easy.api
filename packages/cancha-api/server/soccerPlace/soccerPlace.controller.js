@@ -47,7 +47,7 @@ function get(req, res) {
  */
 async function create(req, res, next) {
   const user = req.user
-  const owner = queries.getOwnerOrFail(req.user.email)
+  const owner = await queries.getOwnerOrFail(req.user.email)
 
   if(!owner) {
     throw new Error({error: "User not found"})
@@ -56,25 +56,34 @@ async function create(req, res, next) {
   const name = req.body.name
   const description = req.body.description
   const location = req.body.location
-  const userState = queries.getUserState(owner.stateId);
+  const userState = await queries.getUserState(owner.stateId);
   const active = (['ACTIVE', 'PREMIUM'].indexOf(userState.name)> -1) ? true : false
-  if (!req.files) console.error('No files were uploaded')
+  if (!req.files) {
+    res.status(401)
+    res.json({error: "No files uploaded" })
+    return
+  }
   else  {
-    await req.files.forEach((key) => {
-    if(["image/jpeg", "image/png"].indexOf(req.files[key].mimetype) < 0) {
-      res.status(403)
-      res.json({error: "Forbidden" })
+    const imagesHaveRightFormat = Object.keys(req.files).includes((key) => {
+      if(["image/jpeg", "image/png"].indexOf(req.files[key].mimetype) < 0) {
+        return true
+      } else return false
+    })
+
+    if(!imagesHaveRightFormat) {
+        res.status(403)
+        return res.json({error: "Forbidden type of image" })
     }
-  })
-    await Object.keys(req.files).forEach(async (name) => {
-      const hash = `${owner.id}-${name}-${new Date().getTime()}`
-      req.files[name].name = hash
+
+    await Object.keys(req.files).forEach(async (key) => {
+      const hash = `${owner.id}-${req.files[key].name}-${new Date().getTime()}`
+      req.files[key].name = hash
 
       try {
-        await aws.uploadToS3(req.files[name])
+        await aws.uploadToS3(req.files[key])
       } catch(e) {
         res.status(500)
-        res.json({error: "Error creating image" })
+        return res.json({error: "Error creating image" })
       }
 
       // create the soccer place
@@ -83,13 +92,15 @@ async function create(req, res, next) {
         description,
         location,
         active,
-        req.files)
+        req.files,
+        owner.id)
       if(!soccerPlace) {
         res.status(500)
-        res.json({error: "Could not create soccerPlace"})
-        return
+        return res.json({error: "Could not create soccerPlace"})
       }
-      res.json(soccerPlace)
+
+      res.status(200)
+      return res.json(soccerPlace)
     })
   }
 }
