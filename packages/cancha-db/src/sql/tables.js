@@ -64,7 +64,7 @@ const createSoccerFieldColumns = table => {
     table.string('name', MAX_NAME_LENGTH).notNullable().index();
     table.string('description').notNullable()
     table.specificType('size', 'smallint').unsigned().notNullable();
-    table.specificType('address', 'POINT').defaultTo(db.raw('POINT (-2.1463057, -79.9759361)'))
+    table.specificType('address', 'POINT').defaultTo(db.raw('POINT (-2.1463057, -79.9759361)')) // remove this hack
 
     table.integer('soccerPlaceId').unsigned().notNullable();
     table.foreign('soccerPlaceId')

@@ -3,6 +3,21 @@ const bcrypt = require('bcrypt');
 const config = require('../../config/config');
 const aws = require('../helpers/s3');
 
+
+/**
+ * check if user isOwner or not.
+ * @return owner
+ */
+async function getOwnerFromUser(user, ownerId) {
+  const owner = await queries.getOwnerOrFail(user.email)
+
+  if(owner.id !== ownerId) {
+    return null
+  }
+
+  return owner
+}
+
 /**
  * Load soccerPlace and append to req.
  */
@@ -24,22 +39,15 @@ async function load(req, res, next, id) {
  */
 async function get(req, res) {
 
-    const owner = await queries.getOwnerOrFail(req.user.email)
+  const owner = getOwnerFromUser(req.user, req.soccerPlace.ownerId)
 
-    if(!owner) {
+  if(!owner) {
       res.status(403)
       return res.json({error: "Forbidden"});
-    }
+  } else {
+    return res.json(req.soccerPlace);
+  }
 
-  const ownerId = owner.id
-
-  if(req.soccerPlace.ownerId !== ownerId) {
-      res.status(403)
-      return res.json({error: "Forbidden"});
-    }
-
-
-  return res.json(req.soccerPlace);
 }
 
 /**
@@ -141,19 +149,15 @@ async function list(req, res, next) {
 }
 
 async function del(req, res, next) {
-    const owner = await queries.getOwnerOrFail(req.user.email)
 
-    if(!owner) {
+  const owner = getOwnerFromUser(req.user, req.soccerPlace.ownerId)
+
+  if(!owner) {
       res.status(403)
       return res.json({error: "Forbidden"});
-    }
+  }
 
   const ownerId = owner.id
-
-  if(req.soccerPlace.ownerId !== ownerId) {
-      res.status(403)
-      return res.json({error: "Forbidden"});
-    }
 
   const soccerplace = req.soccerPlace
   if(!soccerplace) {
