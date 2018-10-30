@@ -16,7 +16,10 @@ router.route('/')
 
 router.route('/:soccerPlaceId')
   /** GET /api/soccerPlaces/:soccerPlaceId - Get soccer place */
-  .get(expressJwt({ secret: config.jwtSecret }), soccerPlaceController.get)
+  .get([expressJwt({ secret: config.jwtSecret })], soccerPlaceController.get)
+
+  /** DELETE /api/soccerPlaces/:soccerPlaceId - Delete soccer place */
+  .delete([expressJwt({ secret: config.jwtSecret })], soccerPlaceController.del)
 
 
 router.param('soccerPlaceId', soccerPlaceController.load);

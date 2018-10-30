@@ -9,8 +9,8 @@ const loadSoccerPlaceFromId = async (id) => {
   try {
     soccerPlace = await db.select().from('soccer_place').first().where({ id })
   } catch(e) {
-    console.error(e);
   }
+
   return soccerPlace
 }
 
@@ -19,9 +19,7 @@ const getOwnerOrFail = async (email) => {
   try {
     user = await db.select().from('users').first().where({ email })
     delete user.password
-  } catch(e) {
-    console.error(e)
-  }
+  } catch(e) {}
   return user
 }
 
@@ -45,7 +43,6 @@ const createSoccerPlaceFromData = async(name, description, location, active, fil
 
   return soccerPlace[0]
   } catch(e) {
-    console.error(e)
     return null
   }
 }
@@ -65,10 +62,24 @@ const getUserState = async (stateId) => {
   try {
     return await db.select().from('state').first().where({id: stateId})
   } catch (e) {
-    console.error(e)
     return null
   }
-
 }
 
-module.exports = { loadSoccerPlaceFromId, getOwnerOrFail, createSoccerPlaceFromData, getPlacesFromOwner, getUserState }
+const deleteSoccerPlaceFromId = async (placeId) => {
+  let deletedPlace = null
+
+  try {
+    // delete images #THIS SHOULD BE REMOVED
+    await db('soccer_place_images')
+      .where('soccer_place_id', placeId)
+          .del()
+
+    deletedPlace = await db('soccer_place')
+      .where('id', placeId)
+          .del().returning("id")
+  } catch(e) { console.error(e) }
+  return deletedPlace
+}
+
+module.exports = { loadSoccerPlaceFromId, getOwnerOrFail, createSoccerPlaceFromData, getPlacesFromOwner, getUserState, deleteSoccerPlaceFromId }
