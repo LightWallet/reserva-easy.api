@@ -7,7 +7,9 @@ const MAIN_URL = `http(s)://s3.amazonaws.com/${BUCKET_NAME}/`
 const loadSoccerPlaceFromId = async (id) => {
   let soccerPlace = null
   try {
-    soccerPlace = await db.select().from('soccer_place').first().where({ id })
+    soccerPlace = await db.select().from('soccer_place')
+      .first()
+      .where({ id , stateId: stateConstants.ACTIVE })
   } catch(e) {
   }
 
@@ -51,7 +53,7 @@ const getPlacesFromOwner = async (owner, limit, skip) => {
   await db.select()
     .from('soccer_place')
     .limit(limit)
-    .where({ ownerId: owner.id })
+    .where({ ownerId: owner.id , stateId: stateConstants.ACTIVE })
     .offset(skip).then(async (placesResult) => {
       return placesResult
     }).catch((e) => null);
@@ -66,19 +68,30 @@ const getUserState = async (stateId) => {
   }
 }
 
+// transaction
 const deleteSoccerPlaceFromId = async (placeId) => {
   let deletedPlace = null
-
   try {
-    // delete images #THIS SHOULD BE REMOVED
-    await db('soccer_place_images')
-      .where('soccer_place_id', placeId)
-          .del()
+    const tx = db.transaction();
+    try {
+        tx("soccer_field")
+        .where({soccerPlaceId: placeId})
+            .update({ stateId: stateConstants.INACTIVE });
 
-    deletedPlace = await db('soccer_place')
-      .where('id', placeId)
-          .del().returning("id")
-  } catch(e) { console.error(e) }
+        tx("soccer_place")
+        .where({id: placeId, stateId: stateConstants.ACTIVE })
+            .update({ stateId: stateConstants.INACTIVE });
+        tx.commit();
+    }
+    catch (e) {
+        tx.rollback()
+        // As you can see, if you don't rethrow here
+        // the outer catch is never triggered
+        throw e;
+    }
+  }
+  catch (e) { console.error(e) }
+
   return deletedPlace
 }
 
