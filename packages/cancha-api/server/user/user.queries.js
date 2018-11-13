@@ -1,4 +1,7 @@
 const db = require('cancha-db');
+const stateConstants = require('../../constants/state.constants');
+const UserAlreadyExistsError = require('../errors/UserAlreadyExistsError');
+const UserNotCreatedError = require('../errors/UserNotCreatedError');
 
 async function assignRoleToUser(user) {
   const role = await db.select()
@@ -16,12 +19,20 @@ async function getUserById(id) {
 
 async function create(params) {
   try {
+    const userDB = await db('users').select('*').
+          where( {email:params.email} ).
+          whereIn('stateId', [stateConstants.ACTIVE, stateConstants.PREMIUM, stateConstants.INACTIVE])
+
+    /* user already exists and is active */
+    if(userDB.length !== 0) {
+      throw new UserAlreadyExistsError()
+    }
+
     const user = await db('users').insert(params).returning('*')
-    if(!user) return null
+    if(!user) throw new UserNotCreatedError()
     return user[0]
   } catch(e) {
-    //console.error("Something wrong happened,", e)
-    return null
+    return e
   }
 }
 
@@ -33,7 +44,6 @@ async function update(id, params) {
     if(!user) return null
     return user[0]
   } catch(e) {
-    //console.error("Something wrong happened,", e)
     return null
   }
 }

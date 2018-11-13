@@ -10,7 +10,6 @@ const UserNotFoundError = require('../errors/UserNotFoundError');
 const RoleNotFoundError = require('../errors/RoleNotFoundError');
 const StateNotFoundError = require('../errors/StateNotFoundError');
 const NotAllowedError = require('../errors/NotAllowedError');
-const UserNotCreatedError = require('../errors/UserNotCreatedError');
 const UserCouldNotBeUpdatedError = require('../errors/UserCouldNotBeUpdatedError');
 const UsersListError = require('../errors/UsersListError');
 
@@ -66,8 +65,9 @@ async function create(req, res, next) {
   }
 
   const user = await userQueries.create({email, password, name, phone, roleId, stateId })
-  if(!user) {
-    return next(new UserNotCreatedError())
+
+  if(user instanceof Error) {
+      return next(user) // middleware handles the type of exception we are launching
   }
 
   delete user['password']
