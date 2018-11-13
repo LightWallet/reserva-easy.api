@@ -8,7 +8,7 @@ async function assignRoleToUser(user) {
 }
 
 async function getUserById(id) {
-  const user = await db.select().from('user').first().where({ id })
+  const user = await db.select().from('users').first().where({ id })
 
   if(!user) return null
   return user
@@ -16,7 +16,7 @@ async function getUserById(id) {
 
 async function create(params) {
   try {
-    const user = await db('user').insert(params).returning('*')
+    const user = await db('users').insert(params).returning('*')
     if(!user) return null
     return user[0]
   } catch(e) {
@@ -27,7 +27,7 @@ async function create(params) {
 
 async function update(id, params) {
   try {
-  const user = await db('user')
+  const user = await db('users')
     .where({ id })
     .update(params).returning("*")
     if(!user) return null
@@ -40,7 +40,7 @@ async function update(id, params) {
 
 async function del(id) {
   try {
-    const user = await db('user')
+    const user = await db('users')
           .where({ id })
           .del()
           .returning("*")
@@ -54,7 +54,7 @@ async function del(id) {
 async function list(limit, skip, deletedStateId) {
   try {
     const users = await db.select()
-          .from('user')
+          .from('users')
           .limit(limit)
           .whereNotIn({stateId: [deletedStateId]})
           .offset(skip)
