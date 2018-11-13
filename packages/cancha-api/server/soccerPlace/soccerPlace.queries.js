@@ -85,12 +85,9 @@ const deleteSoccerPlaceFromId = async (placeId) => {
     }
     catch (e) {
         tx.rollback()
-        // As you can see, if you don't rethrow here
-        // the outer catch is never triggered
         throw e;
     }
-  }
-  catch (e) { console.error(e) }
+  } catch (e) { console.error(e) }
 
   return deletedPlace
 }
