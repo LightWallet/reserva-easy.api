@@ -3,18 +3,33 @@ const bcrypt = require('bcrypt');
 const config = require('../../config/config');
 const aws = require('../helpers/s3');
 
+
+/**
+ * check if user isOwner or not.
+ * @return owner
+ */
+async function getOwnerFromUser(user, ownerId) {
+  const owner = await queries.getOwnerOrFail(user.email)
+
+  if(owner.id !== ownerId) {
+    return null
+  }
+
+  return owner
+}
+
 /**
  * Load soccerPlace and append to req.
  */
 async function load(req, res, next, id) {
   try {
-    const soccerPlace = queries.loadSoccerPlaceFromId(id)
+    const soccerPlace = await queries.loadSoccerPlaceFromId(id)
     if(!soccerPlace) throw new Error({error: "soccerplace not found"})
     req.soccerPlace = soccerPlace
     next()
   } catch(e) {
-    res.status(400)
-    res.json({ "error": e.message })
+    res.status(404)
+    return res.json({ "error": "Not found" })
   }
 }
 
@@ -22,8 +37,17 @@ async function load(req, res, next, id) {
  * Get soccerPlace
  * @returns {soccerPlace}
  */
-function get(req, res) {
-  return res.json(req.soccerPlace);
+async function get(req, res) {
+
+  const owner = getOwnerFromUser(req.user, req.soccerPlace.ownerId)
+
+  if(!owner) {
+      res.status(403)
+      return res.json({error: "Forbidden"});
+  } else {
+    return res.json(req.soccerPlace);
+  }
+
 }
 
 /**
@@ -36,7 +60,7 @@ function get(req, res) {
  */
 async function create(req, res, next) {
   const user = req.user
-  const owner = queries.getOwnerOrFail(req.user.email)
+  const owner = await queries.getOwnerOrFail(req.user.email)
 
   if(!owner) {
     throw new Error({error: "User not found"})
@@ -45,35 +69,49 @@ async function create(req, res, next) {
   const name = req.body.name
   const description = req.body.description
   const location = req.body.location
-  const userState = queries.getUserState(owner.stateId);
+  const userState = await queries.getUserState(owner.stateId);
   const active = (['ACTIVE', 'PREMIUM'].indexOf(userState.name)> -1) ? true : false
-  if (!req.files) console.error('No files were uploaded')
+  if (!req.files) {
+    res.status(401)
+    return res.json({error: "No files uploaded" })
+
+  }
   else  {
-    await req.files.forEach((key) => {
-    if(["image/jpeg", "image/png"].indexOf(req.files[key].mimetype) < 0) {
-      res.status(403)
-      res.json({error: "Forbidden" })
+    const imagesHaveRightFormat = Object.keys(req.files).some((key) => {
+      return (["image/jpeg", "image/png"].indexOf(req.files[key].mimetype) >= 0)
+    })
+
+    if(!imagesHaveRightFormat) {
+        res.status(403)
+        return res.json({error: "Forbidden type of image" })
     }
-  })
-    await Object.keys(req.files).forEach(async (name) => {
-      const hash = `${owner.id}-${name}-${new Date().getTime()}`
-      req.files[name].name = hash
+
+    await Object.keys(req.files).forEach(async (key) => {
+      const hash = `${owner.id}-${req.files[key].name}-${new Date().getTime()}`
+      req.files[key].name = hash
 
       try {
-        await aws.uploadToS3(req.files[name])
+        await aws.uploadToS3(req.files[key])
       } catch(e) {
         res.status(500)
-        res.json({error: "Error creating image" })
+        return res.json({error: "Error creating image" })
       }
 
       // create the soccer place
-      const soccerPlace = await queries.createSoccerPlaceFromData(name, description, location, active, req.files)
+      const soccerPlace = await queries.createSoccerPlaceFromData(
+        name,
+        description,
+        location,
+        active,
+        req.files,
+        owner.id)
       if(!soccerPlace) {
         res.status(500)
-        res.json({error: "Could not create soccerPlace"})
-        return
+        return res.json({error: "Could not create soccerPlace"})
       }
-      res.json(soccerPlace)
+
+      res.status(200)
+      return res.json(soccerPlace)
     })
   }
 }
@@ -96,37 +134,46 @@ async function list(req, res, next) {
     }
 
     const places = await queries.getPlacesFromOwner(owner, limit, skip)
+
     if(!places) {
-      throw new Error({error: "fetch places error"})
+      res.status(404)
+      return res.json({error: "Not found"})
+    } else  {
+      return res.json(places)
     }
 
-    res.json(places)
   } catch(e) {
         res.status(400)
-        res.json({error: "Could not send soccer places"})
+        return res.json({error: "Could not send soccer places"})
   }
 }
 
-async function create2(req, res, next) {
-  const fileKeys = Object.keys(req.files)
-  await fileKeys.forEach((key) => {
-    if(["image/jpeg", "image/png"].indexOf(req.files[key].mimetype) < 0) {
+async function del(req, res, next) {
+
+  const owner = getOwnerFromUser(req.user, req.soccerPlace.ownerId)
+
+  if(!owner) {
       res.status(403)
-      res.json({error: "Forbidden" })
-    }
-  })
+      return res.json({error: "Forbidden"});
+  }
 
-  fileKeys.forEach(async (key) => {
-    var file = req.files[key];
-    try {
-      await aws.uploadToS3(file)
-    } catch(e) {
-      console.error(e)
-    }
-  })
+  const ownerId = owner.id
 
-  res.json({error: "Uploaded Images"})
+  const soccerplace = req.soccerPlace
+  if(!soccerplace) {
+    res.status(404)
+    return res.json({error:"Error querying the soccerplace"})
+  }
 
+  const isDeleted = await queries.deleteSoccerPlaceFromId(soccerplace.id)
+
+  if(!isDeleted) {
+    res.status(500)
+    return res.json({error:"Error deleting"})
+  } else {
+    res.status(200)
+    return res.json({success: "Deleted soccerplace", soccerPlace: soccerplace})
+  }
 }
 
-module.exports = { load, get, create, list };
+module.exports = { load, get, create, del, list };

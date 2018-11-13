@@ -8,7 +8,7 @@ const config = require('../../config/config');
  */
 async function load(req, res, next, id) {
   try {
-    const user = await db.select().from('user').first().where({ id })
+    const user = await db.select().from('users').first().where({ id })
     await model.assignRoleToUser(db, user)
     req.user = user
     next()
@@ -48,10 +48,11 @@ async function create(req, res, next) {
       if(role.type === "ADMIN" || state.name === "PREMIUM" || state.name === "ACTIVE"){
         res.status(401);
         res.json({"error": "Not allowed role or state..."})
+        return
       }
     }
 
-    const user = await db('user').insert({email, password, name, phone, roleId, stateId }).returning('*')
+    const user = await db('users').insert({email, password, name, phone, roleId, stateId }).returning('*')
     delete user[0]['password']
     res.status(200);
     res.json(user[0])
@@ -70,7 +71,7 @@ async function create(req, res, next) {
 async function update(req, res, next) {
   const user = req.user;
   try {
-  const userNew = await db('user')
+  const userNew = await db('users')
     .where({ id: user.id })
     .update({
       name: req.body.name,
@@ -95,7 +96,7 @@ async function update(req, res, next) {
 async function list(req, res, next) {
   const { limit = 10, skip = 0 } = req.query;
   db.select(['id', 'email', 'name', 'phone', 'roleId', 'stateId'])
-    .from('user')
+    .from('users')
     .limit(limit)
     .offset(skip).then(async (usersResult) => {
       res.status(200);
@@ -114,7 +115,7 @@ async function list(req, res, next) {
  */
 function remove(req, res, next) {
    const user = req.user;
-  db('user')
+  db('users')
     .where({ id: user.id })
     .del().then((deletedUser) => {
       res.json(deletedUser);

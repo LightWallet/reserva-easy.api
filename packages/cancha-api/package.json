@@ -60,6 +60,6 @@
   "scripts": {
     "start": "nodemon index.js",
     "pretest": "eslint --ignore-path ../../.gitignore .",
-    "test": "mocha --timeout 1000"
+    "test": "PORT=5000 mocha --timeout 1000"
   }
 }
