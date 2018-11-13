@@ -14,7 +14,9 @@ const respondWithToken = value => {
   const token = jwt.sign({
     email: value.email,
     roleId: value.roleId
-  }, config.jwtSecret);
+  }, config.jwtSecret, {
+    expiresIn: '7d' //
+  });
 
   return { token };
 };
